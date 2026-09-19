@@ -22,10 +22,5 @@ Python • FastAPI • Groq API • SQLite • Pydantic • REST APIs
 
 LLM Tool Calling • AI Agents • Agent Orchestration • Backend Development • Database Integration • Error Handling • Business Automation
 
-## Example
 
-**User:** Which customer has the highest value of shipped orders?
 
-**Agent:** Test User has the highest shipped-order value at $45,000.
-
-Built as a practical demonstration of integrating AI agents with real backend systems and business logic.
