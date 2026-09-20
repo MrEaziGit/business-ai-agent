@@ -3,9 +3,10 @@ import requests
 from app.database import get_messages, save_message
 import json
 from app.services.tools import tool_functions, tools
+print("AVAILABLE TOOLS:", tool_functions.keys())
 SYSTEM_PROMPT = {
     "role": "system",
-    "content": "You are a friendly AI programming tutor. Explain programming concepts simply. Teach step by step and encourage the user to think instead of just giving answers. When a calculation is required, use the calculate tool. When the current time is requested, use the get_time tool. After receiving a tool result, use that result directly to give the final answer. Do not recalculate the result yourself."
+    "content": "You are a friendly business assistant. Help users manage customers and orders. Respond clearly, naturally, and briefly. When a tool is needed, use it. After receiving a tool result, use that result directly to answer the user. Do not explain the tool call, show JSON, or teach programming unless the user specifically asks. If no results are found, clearly say so. Do not invent information.  When displaying orders, use a simple bullet list unless a table can be formatted correctly. Before deleting a customer, always ask for confirmation. Do not call the delete_customer tool until the user clearly confirms the deletion,Only use a tool when it directly matches the user's request. If the requested information or capability is not available through the provided tools, say so clearly. Do not substitute unrelated data or tools."
 }
 
 
@@ -90,24 +91,27 @@ def ask_ai(message: str, conversation_id: int):
                 )
 
             except json.JSONDecodeError:
-                tool_result = "The tool arguments were invalid."
+                tool_result = f"The arguments provided for the {function_name} tool were invalid."
 
             else:
                 call_key = f"{function_name}:{json.dumps(arguments, sort_keys=True)}"
 
+
                 if call_key in executed_tool_calls:
-                    data["tool_choice"] = "none"
-                    break
-
-                executed_tool_calls.add(call_key)
-
-                tool_function = tool_functions.get(function_name)
-
-                if tool_function:
-                    tool_result = tool_function(**arguments)
-                    print("TOOL RESULT:", tool_result)
+                    tool_result = "This tool call was already executed. Do not call it again. Use the previous tool result to answer the user."
                 else:
-                    tool_result = f"Unknown tool: {function_name}"
+                    executed_tool_calls.add(call_key)
+
+                    tool_function = tool_functions.get(function_name)
+
+                    if tool_function:
+                        try:
+                            tool_result = tool_function(**arguments)
+                        except Exception as e:
+                            print("TOOL RESULT:", e)
+                            tool_result = f"The {function_name} tool failed while processing the request."
+                    else:
+                        tool_result = f"Unknown tool: {function_name}"
             messages.append({
                 "role": "tool",
                 "tool_call_id": tool_call["id"],
@@ -118,16 +122,24 @@ def ask_ai(message: str, conversation_id: int):
 
         data["messages"] = messages
 
-        response = requests.post(
-            url,
-            headers=headers,
-            json=data,
-            timeout=30
-        )
+        try:
+            response = requests.post(
+                url,
+                headers=headers,
+                json=data,
+                timeout=30
+            )
 
-        print("SENDING NEXT REQUEST")
+            print("SENDING NEXT REQUEST")
+            print("NEXT RESPONSE:", response.text)
 
-        response.raise_for_status()
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            print("FOLLOW-UP AI REQUEST ERROR:", e)
+            if e.response is not None:
+                print("GROQ ERROR:", e.response.text)
+            reply = "Sorry, i couldn't complete that request, please try again later"
+            break
 
         result = response.json()
 
