@@ -3,10 +3,9 @@ import requests
 from app.database import get_messages, save_message
 import json
 from app.services.tools import tool_functions, tools
-print("AVAILABLE TOOLS:", tool_functions.keys())
 SYSTEM_PROMPT = {
     "role": "system",
-    "content": "You are a friendly business assistant. Help users manage customers and orders. Respond clearly, naturally, and briefly. When a tool is needed, use it. After receiving a tool result, use that result directly to answer the user. Do not explain the tool call, show JSON, or teach programming unless the user specifically asks. If no results are found, clearly say so. Do not invent information.  When displaying orders, use a simple bullet list unless a table can be formatted correctly. Before deleting a customer, always ask for confirmation. Do not call the delete_customer tool until the user clearly confirms the deletion,Only use a tool when it directly matches the user's request. If the requested information or capability is not available through the provided tools, say so clearly. Do not substitute unrelated data or tools."
+    "content": "You are a friendly business assistant. Help users manage customers and orders. Respond clearly, naturally, and briefly. When a tool is needed, use it. After receiving a tool result, use that result directly to answer the user. Do not explain the tool call, show JSON, or teach programming unless the user specifically asks. If no results are found, clearly say so. Do not invent information.  When displaying orders, use a simple bullet list unless a table can be formatted correctly. Before deleting a customer, always ask for confirmation. Do not call the delete_customer tool until the user clearly confirms the deletion,Only use a tool when it directly matches the user's request. If the requested information or capability is not available through the provided tools, say so clearly. Do not substitute unrelated data or tools,After successfully updating an order, use check_order to verify that the requested change was actually applied before giving the final response."
 }
 
 
@@ -56,9 +55,6 @@ def ask_ai(message: str, conversation_id: int):
             print("GROQ ERROR:", e.response.text)
 
         return "Sorry, I'm having trouble connecting to the AI service, please try again in few"
-
-    print("STATUS:", response.status_code)
-    print("RESPONSE:", response.text)
 
     result = response.json()
 
@@ -118,7 +114,6 @@ def ask_ai(message: str, conversation_id: int):
                 "content": str(tool_result)
             })
 
-            print("TOOL MESSAGE ADDED")
 
         data["messages"] = messages
 
@@ -130,9 +125,7 @@ def ask_ai(message: str, conversation_id: int):
                 timeout=30
             )
 
-            print("SENDING NEXT REQUEST")
-            print("NEXT RESPONSE:", response.text)
-
+          
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print("FOLLOW-UP AI REQUEST ERROR:", e)
@@ -142,12 +135,6 @@ def ask_ai(message: str, conversation_id: int):
             break
 
         result = response.json()
-
-        print(
-            "AGENT RESPONSE:",
-            json.dumps(result, indent=2)
-        )
-
     save_message(conversation_id, "user", message)
     save_message(conversation_id, "assistant", reply)
 

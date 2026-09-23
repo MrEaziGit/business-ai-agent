@@ -488,5 +488,27 @@ def get_top_customer_shipping_stats():
         "total_value": result[1],
         "order_count": result[2]
     }
+def get_customer(customer):
+    connection = sqlite3.connect(DATABASE)
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT name, email, phone
+        FROM customers
+        WHERE name = ? AND is_deleted = 0
+    """, (customer,))
+
+    result = cursor.fetchone()
+
+    connection.close()
+
+    if not result:
+        return "Customer not found"
+
+    return {
+        "name": result[0],
+        "email": result[1],
+        "phone": result[2]
+    }
 
 init_db()

@@ -1,5 +1,5 @@
 from datetime import datetime
-from app.services.business__db import check_order, find_customer, add_order, update_order, cancel_order, add_customer, update_customer, delete_customer, list_orders, search_orders, get_order_stats, get_customer_order_value, get_top_customer_by_order_value, get_order_status_percentage, get_average_order_value, compare_order_value_by_status
+from app.services.business__db import check_order, find_customer, add_order, update_order, cancel_order, add_customer, update_customer, delete_customer, list_orders, search_orders, get_order_stats, get_customer_order_value, get_top_customer_by_order_value, get_order_status_percentage, get_average_order_value, compare_order_value_by_status, get_customer
 
 def calculate(a, b):
     return a + b
@@ -223,23 +223,31 @@ tools = [
         "type": "function",
         "function": {
             "name": "search_orders",
-            "description": "Search customer orders using one or more optional filters.",
+            "description": (
+                "Search customer orders using any combination of optional filters. "
+                "Only include filters that the user actually provides. "
+                "Do not send null values. "
+                "If the user only specifies a status, provide only status. "
+                "If the user only specifies a customer, provide only customer. "
+                "If the user only specifies an order ID, provide only order_id."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "customer": {
                         "type": "string",
-                        "description": "The customer's name to search for."
+                        "description": "The customer's name. Only include this if the user provides a customer name."
                     },
                     "status": {
                         "type": "string",
-                        "description": "The order status to search for."
+                        "description": "The order status, such as Processing, Shipped, or Cancelled. Only include this if the user specifies a status."
                     },
                     "order_id": {
                         "type": "string",
-                        "description": "The order ID to search for."
+                        "description": "The order ID. Only include this if the user provides an order ID."
                     }
-                }
+                },
+                "additionalProperties": False
             }
         }
     },
@@ -348,6 +356,23 @@ tools = [
                 "required": ["status1", "status2"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_customer",
+            "description": "Find an active customer by their name and return their name, email, and phone number.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "customer": {
+                        "type": "string",
+                        "description": "The customer's name."
+                    }
+                },
+                "required": ["customer"]
+            }
+        }
     }
 ]
 
@@ -369,5 +394,6 @@ tool_functions = {
     "get_top_customer_by_order_value": get_top_customer_by_order_value,
     "get_order_status_percentage": get_order_status_percentage,
     "get_average_order_value": get_average_order_value,
-    "compare_order_value_by_status": compare_order_value_by_status
+    "compare_order_value_by_status": compare_order_value_by_status,
+    "get_customer": get_customer
 }
