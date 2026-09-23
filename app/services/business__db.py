@@ -13,7 +13,6 @@ class OrderInput(BaseModel):
 def init_db():
 
     connection = sqlite3.connect(DATABASE)
-
     cursor = connection.cursor()
 
     cursor.execute("""
@@ -25,22 +24,28 @@ def init_db():
             total INTEGER NOT NULL
         )
     """)
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS customers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL,
-        email TEXT UNIQUE NOT NULL,
-        phone TEXT,
-        is_deleted INTEGER NOT NULL DEFAULT 0
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            phone TEXT,
+            is_deleted INTEGER NOT NULL DEFAULT 0
         )
-    
     """)
 
+    cursor.execute("SELECT COUNT(*) FROM orders")
+    order_count = cursor.fetchone()[0]
+
+    if order_count == 0:
+        cursor.execute("""
+            INSERT INTO orders (order_id, customer, status, total)
+            VALUES (?, ?, ?, ?)
+        """, ("ORD006", "Test User", "Cancelled", 20000))
+
     connection.commit()
-
     connection.close()
-
-
 def check_order(order_id):
 
     connection = sqlite3.connect(DATABASE)
