@@ -1,5 +1,5 @@
 from datetime import datetime
-from app.services.business__db import check_order, find_customer, add_order, update_order, cancel_order, add_customer, update_customer, delete_customer, list_orders, search_orders, get_order_stats, get_customer_order_value, get_top_customer_by_order_value, get_order_status_percentage, get_average_order_value, compare_order_value_by_status, get_customer
+from app.services.business__db import check_order, find_customer, add_order, update_order, cancel_order, add_customer, update_customer, delete_customer, list_orders, search_orders, get_order_stats, get_customer_order_value, get_top_customer_by_order_value, get_order_status_percentage, get_average_order_value, compare_order_value_by_status, get_customer, find_product
 
 def calculate(a, b):
     return a + b
@@ -78,32 +78,24 @@ tools = [
             }
         }
     },
-    {
+   {
         "type": "function",
         "function": {
             "name": "add_order",
-            "description": "create a new customer order.",
+            "description": "Create a new customer order. The system automatically generates the order ID and sets the initial status to Pending.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "order_id": {
-                        "type": "string",
-                        "description": "The unique order ID."
-                    },
                     "customer": {
                         "type": "string",
-                        "description": "The customer name",
-                    },
-                    "status": {
-                        "type": "string",
-                        "description": "The current status of the order",
+                        "description": "The name of the customer placing the order."
                     },
                     "total": {
-                        "type": "string",
-                        "description": "The current state of the order"
+                        "type": "number",
+                        "description": "The total value of the order."
                     }
                 },
-                "required": ["order_id", "customer", "status", "total"]
+                "required": ["customer", "total"]
             }
         }
     },
@@ -373,7 +365,24 @@ tools = [
                 "required": ["customer"]
             }
         }
-    }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "find_product",
+            "description": "Find products by name and return their price and available stock.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "The name or partial name of the product to search for."
+                    }
+                },
+                "required": ["name"]
+            }
+        }
+    },
 ]
 
 tool_functions = {
@@ -395,5 +404,6 @@ tool_functions = {
     "get_order_status_percentage": get_order_status_percentage,
     "get_average_order_value": get_average_order_value,
     "compare_order_value_by_status": compare_order_value_by_status,
-    "get_customer": get_customer
+    "get_customer": get_customer,
+    "find_product": find_product
 }
