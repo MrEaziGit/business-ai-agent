@@ -35,17 +35,56 @@ def init_db():
         )
     """)
 
-    cursor.execute("SELECT COUNT(*) FROM orders")
-    order_count = cursor.fetchone()[0]
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE NOT NULL,
+            price INTEGER NOT NULL,
+            stock INTEGER NOT NULL DEFAULT 0
+        )
+    """)
 
-    if order_count == 0:
-        cursor.execute("""
-            INSERT INTO orders (order_id, customer, status, total)
-            VALUES (?, ?, ?, ?)
-        """, ("ORD006", "Test User", "Cancelled", 20000))
+    cursor.execute("SELECT COUNT(*) FROM products")
+    product_count = cursor.fetchone()[0]
+
+    if product_count == 0:
+        cursor.executemany("""
+            INSERT INTO products (name, price, stock)
+            VALUES (?, ?, ?)
+        """, [
+            ("Nike Air Max", 150000, 10),
+            ("Adidas Ultraboost", 120000, 8),
+            ("Puma RS-X", 95000, 5)
+        ])
 
     connection.commit()
     connection.close()
+def find_product(name):
+
+    connection = sqlite3.connect(DATABASE)
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        SELECT name, price, stock
+        FROM products
+        WHERE LOWER(name) LIKE LOWER(?)
+    """, (f"%{name}%",))
+
+    products = cursor.fetchall()
+
+    connection.close()
+
+    if not products:
+        return "Product not found."
+
+    return [
+        {
+            "name": product[0],
+            "price": product[1],
+            "stock": product[2]
+        }
+        for product in products
+    ]
 def check_order(order_id):
 
     connection = sqlite3.connect(DATABASE)
@@ -100,45 +139,48 @@ def find_customer(customer):
         for order in orders
     ]
 
-
-def add_order(order_id, customer, status, total):
-
-    order = OrderInput(
-        order_id=order_id,
-        customer=customer,
-        status=status,
-        total=total
-    )
+def add_order(customer, total):
 
     connection = sqlite3.connect(DATABASE)
 
     cursor = connection.cursor()
 
     try:
+        # Generate a unique order ID
+        cursor.execute(
+            "SELECT order_id FROM orders ORDER BY id DESC LIMIT 1"
+        )
+
+        last_order = cursor.fetchone()
+
+        if last_order:
+            last_number = int(last_order[0].replace("ORD", ""))
+            new_order_id = f"ORD{last_number + 1:03d}"
+        else:
+            new_order_id = "ORD001"
+
+
+        status = "Pending"
 
         cursor.execute("""
             INSERT INTO orders (order_id, customer, status, total)
             VALUES (?, ?, ?, ?)
         """, (
-            order.order_id,
-            order.customer,
-            order.status,
-            order.total
+            new_order_id,
+            customer,
+            status,
+            total
         ))
 
         connection.commit()
 
     except sqlite3.IntegrityError:
-
         connection.close()
-
         return "Order ID already exists"
 
     connection.close()
 
-    return "Order created successfully"
-
-
+    return f"Order created successfully. Order ID: {new_order_id}"
 def update_order(order_id, status):
 
     valid_statuses = ["Processing", "Shipped", "cancelled"]
