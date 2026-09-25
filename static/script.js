@@ -1,11 +1,17 @@
 const input = document.getElementById("msg");
 const sendBtn = document.getElementById("sendBtn");
 
+const API_URL = "https://business-ai-agent-i8wh.onrender.com";
+
 let conversationId = null;
+
 
 async function loadConversations() {
     try {
-        const res = await fetch("http://127.0.0.1:8000/conversations");
+        const res = await fetch(
+            `${API_URL}/conversations`
+        );
+
         const conversations = await res.json();
 
         const conversationList =
@@ -14,71 +20,116 @@ async function loadConversations() {
         conversationList.innerHTML = "";
 
         const newChat = document.createElement("button");
+
         newChat.textContent = "+ New Chat";
         newChat.className = "new-chat";
 
         newChat.addEventListener("click", async () => {
             await createConversation();
+
             document.getElementById("chatBox").innerHTML = "";
+
             await loadConversations();
         });
 
         conversationList.appendChild(newChat);
 
+
         conversations.forEach((conversation) => {
-    const container = document.createElement("div");
 
-    container.className = "conversation-container";
+            const container =
+                document.createElement("div");
 
-    const item = document.createElement("div");
+            container.className =
+                "conversation-container";
 
-    item.className = "conversation-item";
 
-    item.textContent = "Conversation " + conversation.id;
+            const item =
+                document.createElement("div");
 
-    item.addEventListener("click", () => {
-        conversationId = conversation.id;
-        loadConversation(conversation.id);
-    });
+            item.className =
+                "conversation-item";
 
-    const deleteButton = document.createElement("button");
+            item.textContent =
+                "Conversation " + conversation.id;
 
-    deleteButton.textContent = "×";
-    deleteButton.className = "delete-conversation";
 
-    deleteButton.addEventListener("click", async (event) => {
-        event.stopPropagation();
+            item.addEventListener("click", () => {
 
-        const confirmed = confirm(
-            "Delete this conversation?"
-        );
+                conversationId =
+                    conversation.id;
 
-        if (!confirmed) return;
+                loadConversation(
+                    conversation.id
+                );
+            });
 
-        const response = await fetch(
-            `http://127.0.0.1:8000/conversation/${conversation.id}`,
-            {
-                method: "DELETE"
-            }
-        );
 
-        if (response.ok) {
-            if (conversationId === conversation.id) {
-                conversationId = null;
+            const deleteButton =
+                document.createElement("button");
 
-                document.getElementById("chatBox").innerHTML = "";
-            }
+            deleteButton.textContent = "×";
 
-            await loadConversations();
-        }
-    });
+            deleteButton.className =
+                "delete-conversation";
 
-    container.appendChild(item);
-    container.appendChild(deleteButton);
 
-    conversationList.appendChild(container);
-});
+            deleteButton.addEventListener(
+                "click",
+                async (event) => {
+
+                    event.stopPropagation();
+
+                    const confirmed =
+                        confirm(
+                            "Delete this conversation?"
+                        );
+
+                    if (!confirmed) return;
+
+
+                    const response =
+                        await fetch(
+                            `${API_URL}/conversation/${conversation.id}`,
+                            {
+                                method: "DELETE"
+                            }
+                        );
+
+
+                    if (response.ok) {
+
+                        if (
+                            conversationId ===
+                            conversation.id
+                        ) {
+
+                            conversationId = null;
+
+                            document.getElementById(
+                                "chatBox"
+                            ).innerHTML = "";
+                        }
+
+                        await loadConversations();
+                    }
+                }
+            );
+
+
+            container.appendChild(item);
+
+            container.appendChild(
+                deleteButton
+            );
+
+            conversationList.appendChild(
+                container
+            );
+        });
+
     } catch (error) {
+
         console.error(
             "Failed to load conversations:",
             error
@@ -86,18 +137,28 @@ async function loadConversations() {
     }
 }
 
+
+
 async function createConversation() {
+
     try {
-        const res = await fetch(
-            "http://127.0.0.1:8000/conversation",
-            {
-                method: "POST"
-            }
-        );
 
-        const data = await res.json();
+        const res =
+            await fetch(
+                `${API_URL}/conversation`,
+                {
+                    method: "POST"
+                }
+            );
 
-        conversationId = data.conversation_id;
+
+        const data =
+            await res.json();
+
+
+        conversationId =
+            data.conversation_id;
+
 
         console.log(
             "New Conversation ID:",
@@ -105,6 +166,7 @@ async function createConversation() {
         );
 
     } catch (error) {
+
         console.error(
             "Failed to create conversation:",
             error
@@ -112,60 +174,98 @@ async function createConversation() {
     }
 }
 
-async function loadConversation(id) {
-    try {
-        const res = await fetch(
-            `http://127.0.0.1:8000/conversation/${id}`
-        );
 
-        const data = await res.json();
+
+async function loadConversation(id) {
+
+    try {
+
+        const res =
+            await fetch(
+                `${API_URL}/conversation/${id}`
+            );
+
+
+        const data =
+            await res.json();
+
 
         if (!res.ok) {
+
             console.error(
                 "Failed to load conversation:",
                 data
             );
+
             return;
         }
 
+
         conversationId = id;
 
+
         const chatBox =
-            document.getElementById("chatBox");
+            document.getElementById(
+                "chatBox"
+            );
+
 
         chatBox.innerHTML = "";
 
+
         data.messages.forEach((message) => {
+
             const msg =
                 document.createElement("div");
 
-            if (message.role === "user") {
-                msg.className = "msg user";
+
+            if (
+                message.role === "user"
+            ) {
+
+                msg.className =
+                    "msg user";
+
                 msg.textContent =
-                    "You: " + message.content;
+                    "You: " +
+                    message.content;
+
             } else {
-                msg.className = "msg bot";
+
+                msg.className =
+                    "msg bot";
 
                 msg.innerHTML =
                     "<strong>Bot:</strong><br>" +
-                    marked.parse(message.content);
+                    marked.parse(
+                        message.content
+                    );
+
 
                 msg.querySelectorAll(
                     "pre code"
                 ).forEach((block) => {
-                    hljs.highlightElement(block);
+
+                    hljs.highlightElement(
+                        block
+                    );
+
                 });
             }
+
 
             chatBox.appendChild(msg);
         });
 
+
         chatBox.scrollTop =
             chatBox.scrollHeight;
+
 
         await loadConversations();
 
     } catch (error) {
+
         console.error(
             "Error loading conversation:",
             error
@@ -173,114 +273,178 @@ async function loadConversation(id) {
     }
 }
 
+
+
 input.addEventListener(
     "keydown",
     function(event) {
+
         if (event.key === "Enter") {
+
             send();
         }
     }
 );
 
+
+
 async function send() {
-    let message = input.value.trim();
+
+    let message =
+        input.value.trim();
+
 
     if (!message) return;
 
+
     if (conversationId === null) {
+
         await createConversation();
 
+
         if (conversationId === null) {
+
             return;
         }
     }
 
+
     const chatBox =
-        document.getElementById("chatBox");
+        document.getElementById(
+            "chatBox"
+        );
+
 
     const userMessage =
         document.createElement("div");
 
-    userMessage.className = "msg user";
+
+    userMessage.className =
+        "msg user";
+
 
     userMessage.textContent =
         "You: " + message;
 
-    chatBox.appendChild(userMessage);
+
+    chatBox.appendChild(
+        userMessage
+    );
+
 
     input.value = "";
+
 
     const typing =
         document.createElement("div");
 
-    typing.className = "msg bot";
+
+    typing.className =
+        "msg bot";
+
 
     typing.textContent =
         "AI is typing...";
 
-    chatBox.appendChild(typing);
+
+    chatBox.appendChild(
+        typing
+    );
+
 
     sendBtn.disabled = true;
+
 
     chatBox.scrollTop =
         chatBox.scrollHeight;
 
-    try {
-        const res = await fetch(
-            "http://127.0.0.1:8000/chat",
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
-                body: JSON.stringify({
-                    message: message,
-                    conversation_id:
-                        conversationId
-                })
-            }
-        );
 
-        const data = await res.json();
+    try {
+
+        const res =
+            await fetch(
+                `${API_URL}/chat`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        message: message,
+
+                        conversation_id:
+                            conversationId
+
+                    })
+                }
+            );
+
+
+        const data =
+            await res.json();
+
 
         if (!res.ok) {
+
             typing.textContent =
                 "Error: " +
                 JSON.stringify(data);
 
             sendBtn.disabled = false;
+
             return;
         }
 
+
         typing.innerHTML =
             "<strong>Bot:</strong><br>" +
-            marked.parse(data.reply);
+            marked.parse(
+                data.reply
+            );
+
 
         typing.querySelectorAll(
             "pre code"
         ).forEach((block) => {
-            hljs.highlightElement(block);
+
+            hljs.highlightElement(
+                block
+            );
+
         });
+
 
         await loadConversations();
 
+
     } catch (error) {
+
         console.error(
             "Chat error:",
             error
         );
 
+
         typing.textContent =
             "Sorry, I'm having trouble connecting to the AI service. Please try again.";
     }
 
+
     sendBtn.disabled = false;
+
 
     chatBox.scrollTop =
         chatBox.scrollHeight;
 }
 
+
+
 createConversation().then(() => {
+
     loadConversations();
+
 });
